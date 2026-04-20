@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firstcamp – Global vs Local Checkout (K512282)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8f8f6;
+      padding: 32px;
+      color: #1a1a1a;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #111;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 32px;
+    }
+    .kpi-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .kpi {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 16px 20px;
+      flex: 1;
+    }
+    .kpi-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .kpi-value { font-size: 28px; font-weight: 700; color: #111; }
+    .kpi-sub { font-size: 12px; color: #888; margin-top: 2px; }
+    .kpi-value.accent { color: #c0392b; }
+    .chart-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .chart-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 16px;
+    }
+    .chart-wrap { position: relative; height: 280px; }
+    .note {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 8px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Global vs Local Checkout — Firstcamp (K512282)</h1>
+  <p class="subtitle">22 mar – 19 apr 2026 &nbsp;·&nbsp; Senaste 29 hela dagar</p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Totalt antal orders</div>
+      <div class="kpi-value">428 791</div>
+      <div class="kpi-sub">29 dagar</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Snitt global checkout</div>
+      <div class="kpi-value accent">10.7%</div>
+      <div class="kpi-sub">per dag</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Totalt global checkout</div>
+      <div class="kpi-value">46 111</div>
+      <div class="kpi-sub">orders via global</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Max global checkout</div>
+      <div class="kpi-value">15.2%</div>
+      <div class="kpi-sub">19 apr 2026</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Global checkout % per dag</div>
+    <div class="chart-wrap">
+      <canvas id="lineChart"></canvas>
+    </div>
+    <p class="note">* 20 apr ej inkluderat (pågående dag)</p>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Antal orders per dag — Global vs Lokal</div>
+    <div class="chart-wrap">
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const labels = [
+      '22 mar','23 mar','24 mar','25 mar','26 mar','27 mar','28 mar',
+      '29 mar','30 mar','31 mar',
+      '1 apr','2 apr','3 apr','4 apr','5 apr','6 apr','7 apr','8 apr','9 apr','10 apr',
+      '11 apr','12 apr','13 apr','14 apr','15 apr','16 apr','17 apr','18 apr','19 apr'
+    ];
+
+    const totalOrders  = [16253,10647,10691,14951,10006,12616,16192,20420,14737,14712,12508,12705,15135,12969,15831,18879,14912,15527,16127,14990,15615,32507,14032,12681,13970,13111,14081,13405,21820];
+    const globalOrders = [1630,1234,1205,1322,1170,1766,1643,2542,1561,1605,1317,1287,1892,1253,1664,2314,1838,1437,1253,1294,1428,3234,1829,1385,1349,1205,1426,1486,3327];
+    const localOrders  = [14623,9413,9486,13629,8836,10850,14549,17878,13176,13107,11191,11418,13243,11716,14167,16565,13074,14090,14874,13696,14187,29273,12203,11296,12621,11906,12655,11919,18493];
+    const globalPct    = [10.0,11.6,11.3,8.8,11.7,14.0,10.1,12.4,10.6,10.9,10.5,10.1,12.5,9.7,10.5,12.3,12.3,9.3,7.8,8.6,9.1,9.9,13.0,10.9,9.7,9.2,10.1,11.1,15.2];
+
+    const avgPct = (globalPct.reduce((a,b)=>a+b,0)/globalPct.length).toFixed(1);
+
+    // Line chart
+    new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Global checkout %',
+            data: globalPct,
+            borderColor: '#c0392b',
+            backgroundColor: 'rgba(192,57,43,0.07)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: '#c0392b',
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: `Snitt (${avgPct}%)`,
+            data: Array(labels.length).fill(parseFloat(avgPct)),
+            borderColor: '#aaa',
+            borderWidth: 1.5,
+            borderDash: [5,4],
+            pointRadius: 0,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}%`
+            }
+          }
+        },
+        scales: {
+          y: {
+            min: 0,
+            max: 20,
+            ticks: {
+              callback: v => v + '%',
+              font: { size: 11 }
+            },
+            grid: { color: '#f0f0f0' }
+          },
+          x: { ticks: { font: { size: 11 }, maxRotation: 45 }, grid: { display: false } }
+        }
+      }
+    });
+
+    // Stacked bar chart
+    new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Lokal checkout',
+            data: localOrders,
+            backgroundColor: '#d4d0c8',
+            stack: 'orders'
+          },
+          {
+            label: 'Global checkout',
+            data: globalOrders,
+            backgroundColor: '#c0392b',
+            stack: 'orders'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
+          tooltip: {
+            callbacks: {
+              afterBody: (items) => {
+                const total = items.reduce((s,i)=>s+i.parsed.y,0);
+                const gIdx = items.findIndex(i=>i.dataset.label==='Global checkout');
+                if(gIdx>=0){
+                  const pct = ((items[gIdx].parsed.y/totalOrders[items[gIdx].dataIndex])*100).toFixed(1);
+                  return [`Global andel: ${pct}%`];
+                }
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            stacked: true,
+            ticks: {
+              callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v,
+              font: { size: 11 }
+            },
+            grid: { color: '#f0f0f0' }
+          },
+          x: { stacked: true, ticks: { font: { size: 11 }, maxRotation: 45 }, grid: { display: false } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
