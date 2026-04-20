@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recurring Checkout — FixMyPhone Integration Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Kustom brand tokens ── */
+    :root {
+      --font: 'Albert Sans', system-ui, sans-serif;
+
+      /* Brand palette */
+      --kustom-black:  #161616;
+      --kustom-yellow: #EAFE53;
+      --kustom-blue:   #A8C0C4;
+      --kustom-cream:  #F8F5E5;
+      --kustom-border: #E8E3D3;
+      --kustom-card:   #FFFFFF;
+
+      /* Semantic */
+      --background-base:   var(--kustom-cream);
+      --background-card:   var(--kustom-card);
+      --background-accent: #F0EDD8;
+      --stroke-weak:       var(--kustom-border);
+      --stroke-strong:     rgba(22, 22, 22, 0.3);
+      --text-strong:       var(--kustom-black);
+      --text-weak:         rgba(22, 22, 22, 0.68);
+      --text-muted:        rgba(22, 22, 22, 0.45);
+      --text-link:         var(--kustom-black);
+      --fill-weak:         rgba(22, 22, 22, 0.06);
+
+      /* Callout colours — kept semantic, but warm-toned */
+      --fill-info:    rgba(168, 192, 196, 0.15);
+      --stroke-info:  var(--kustom-blue);
+      --text-info:    #3a6e75;
+
+      --fill-success: rgba(4, 120, 87, 0.05);
+      --stroke-success: rgba(4, 120, 87, 1);
+      --text-success:   rgba(4, 120, 87, 1);
+
+      --fill-warning:  rgba(234, 254, 83, 0.35);
+      --stroke-warning: #b8a600;
+      --text-warning:  #7a6c00;
+
+      --fill-error:   rgba(185, 28, 28, 0.05);
+      --stroke-error: rgba(185, 28, 28, 1);
+      --text-error:   rgba(185, 28, 28, 1);
+
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+    }
+
+    /* ── Layout ── */
+    body {
+      font-family: var(--font);
+      background: var(--background-base);
+      color: var(--text-weak);
+      font-size: 16px;
+      line-height: 24px;
+      font-weight: 400;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--background-card);
+      border: 1px solid var(--stroke-weak);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+
+    /* ── Cover ── */
+    .cover {
+      background: var(--kustom-black);
+      padding: 56px 64px 52px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .cover-eyebrow {
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0;
+    }
+    .cover-title {
+      font-size: 30px;
+      line-height: 36px;
+      font-weight: 400;
+      color: #FFFFFF;
+      max-width: 560px;
+    }
+    .cover-meta {
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+    }
+    .cover-meta span { margin: 0 6px; opacity: 0.4; }
+
+    /* ── Page body ── */
+    .page-body {
+      display: flex;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 64px;
+      gap: 48px;
+      background: var(--background-base);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 200px;
+      flex-shrink: 0;
+    }
+    .sidebar-nav {
+      position: sticky;
+      top: 32px;
+    }
+    .sidebar-label {
+      font-size: 11px;
+      line-height: 16px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0;
+      margin-bottom: 10px;
+    }
+    .sidebar-nav a {
+      display: block;
+      font-size: 13px;
+      line-height: 20px;
+      font-weight: 400;
+      color: var(--text-weak);
+      text-decoration: none;
+      padding: 5px 0;
+      border-left: 2px solid var(--stroke-weak);
+      padding-left: 12px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .sidebar-nav a:hover { color: var(--text-strong); border-left-color: var(--stroke-strong); }
+    .sidebar-nav a.active { color: var(--text-strong); border-left-color: var(--kustom-black); font-weight: 500; }
+
+    /* ── Content ── */
+    .content { flex: 1; min-width: 0; }
+
+    .section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+    h1 {
+      font-size: 24px; line-height: 32px; font-weight: 400;
+      color: var(--text-strong);
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: 20px; line-height: 28px; font-weight: 400;
+      color: var(--text-strong);
+      margin-bottom: 10px;
+    }
+    h3 {
+      font-size: 14px; line-height: 20px; font-weight: 500;
+      color: var(--text-strong);
+      margin-bottom: 8px;
+      margin-top: 24px;
+    }
+    p { margin-bottom: 14px; font-size: 16px; line-height: 24px; }
+    p:last-child { margin-bottom: 0; }
+
+    a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--kustom-border); }
+    a:hover { text-decoration-color: var(--kustom-black); }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid var(--stroke-weak); margin: 0 0 40px; }
+
+    /* ── Callout ── */
+    .callout {
+      background: var(--fill-info);
+      border-left: 3px solid var(--stroke-info);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-strong);
+    }
+    .callout.warning {
+      background: var(--fill-warning);
+      border-left-color: var(--stroke-warning);
+    }
+    .callout.success {
+      background: var(--fill-success);
+      border-left-color: var(--stroke-success);
+    }
+    .callout.error {
+      background: var(--fill-error);
+      border-left-color: var(--stroke-error);
+    }
+    .callout-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-info);
+      margin-bottom: 4px;
+      letter-spacing: 0;
+    }
+    .callout.warning .callout-label { color: var(--text-warning); }
+    .callout.success .callout-label { color: var(--text-success); }
+    .callout.error .callout-label { color: var(--text-error); }
+
+    /* ── Code ── */
+    pre {
+      background: var(--navy-950);
+      border: 1px solid var(--navy-400-18);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+    pre code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--navy-100);
+      background: none;
+      padding: 0;
+    }
+    p code, li code, td code {
+      background: var(--kustom-border);
+      color: var(--kustom-black);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.875em;
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* ── Flow diagram ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-bottom: 24px;
+    }
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .flow-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 32px;
+      flex-shrink: 0;
+    }
+    .flow-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--kustom-black);
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .flow-line {
+      width: 2px;
+      flex: 1;
+      min-height: 24px;
+      background: var(--stroke-weak);
+      margin-top: 2px;
+      margin-bottom: 2px;
+    }
+    .flow-step:last-child .flow-line { display: none; }
+    .flow-body {
+      padding-bottom: 20px;
+      flex: 1;
+    }
+    .flow-title {
+      font-size: 14px;
+      line-height: 20px;
+      font-weight: 500;
+      color: var(--text-strong);
+      margin-bottom: 4px;
+    }
+    .flow-desc {
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-weak);
+    }
+
+    /* ── Step badge ── */
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .step-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--kustom-black);
+      color: var(--kustom-yellow);
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      line-height: 20px;
+      margin-bottom: 20px;
+      background: var(--background-card);
+      border: 1px solid var(--stroke-weak);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    th {
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-strong);
+      font-size: 12px;
+      padding: 8px 12px;
+      background: var(--background-accent);
+      border-bottom: 1px solid var(--stroke-weak);
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--stroke-weak);
+      color: var(--text-weak);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1px solid var(--stroke-weak);
+      padding: 24px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-weak);
+      text-decoration: none;
+    }
+    .footer-links a:hover { color: var(--text-strong); }
+    .footer-version {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <img src="data:image/svg+xml,%3Csvg%20width%3D%2280%22%20height%3D%2235%22%20viewBox%3D%220%200%2080%2035%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20clip-path%3D%22url%28%23a%29%22%3E%3Cg%20clip-path%3D%22url%28%23b%29%22%3E%3Cmask%20id%3D%22c%22%20style%3D%22mask-type%3Aluminance%22%20maskUnits%3D%22userSpaceOnUse%22%20x%3D%22-1%22%20y%3D%2210%22%20width%3D%2281%22%20height%3D%2215%22%3E%3Cpath%20d%3D%22M79.9999%2010.5H-0.164062V24.5H79.9999V10.5Z%22%20fill%3D%22white%22%2F%3E%3C%2Fmask%3E%3Cg%20mask%3D%22url%28%23c%29%22%3E%3Cpath%20d%3D%22M22.8498%2019.468C22.8435%2019.6348%2022.7731%2019.7926%2022.6536%2019.9083C22.534%2020.0241%2022.3746%2020.0887%2022.2087%2020.0887C22.0428%2020.0887%2021.8834%2020.0241%2021.7639%2019.9083C21.6443%2019.7926%2021.574%2019.6348%2021.5676%2019.468V13.8115H16.3955V20.165C16.3955%2022.567%2017.6994%2023.8059%2019.858%2023.8059C21.313%2023.8059%2022.3962%2023.2936%2022.995%2022.5002V23.4954H28.0256V13.8117H22.853V19.4682L22.8498%2019.468Z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3Cpath%20d%3D%22M33.5908%2016.7761C33.5908%2016.4655%2033.8099%2016.3304%2034.1864%2016.3304C34.5628%2016.3304%2034.8622%2016.5819%2034.8622%2017.0866H39.357C39.357%2015.6146%2038.4821%2013.4844%2033.972%2013.4844C30.7934%2013.4844%2028.7859%2014.7233%2028.7859%2016.6798C28.7859%2020.7478%2034.6322%2019.2169%2034.6322%2020.5147C34.6322%2020.805%2034.3932%2020.9603%2034.0167%2020.9603C33.58%2020.9603%2033.3007%2020.6498%2033.3007%2020.1856H28.6855C28.7458%2022.6264%2030.8721%2023.8078%2034.0506%2023.8078C36.8127%2023.8078%2039.6549%2023.1884%2039.6549%2020.4961C39.6549%2016.7387%2033.5893%2018.0755%2033.5893%2016.7774L33.5908%2016.7761Z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3Cpath%20d%3D%22M12.4825%2017.3767L15.8231%2013.6377L11.6893%2010.5L8.06481%2014.8784V11.0233H2.76913V14.8006H-0.164062V19.4696H2.76913V23.4987H8.06481V19.6825C9.40888%2020.7678%2010.1618%2022.0269%2010.4472%2023.4988H16.2103C15.7625%2021.1358%2014.5409%2019.1019%2012.4839%2017.3784L12.4825%2017.3767Z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3Cpath%20d%3D%22M46.3978%2011.469H41.2041V13.8134H39.7166V17.0864H41.2041V19.7012C41.2041%2022.2584%2042.6916%2023.4977%2045.7051%2023.4977H48.413V19.5849H46.9055C46.8384%2019.5886%2046.7714%2019.5782%2046.7085%2019.5544C46.6457%2019.5305%2046.5885%2019.4938%2046.5406%2019.4465C46.4927%2019.3991%2046.4551%2019.3423%2046.4303%2019.2795C46.4054%2019.2167%2046.3939%2019.1494%2046.3963%2019.0819V17.0865H48.4131V13.8134H46.3963V11.469H46.3978Z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3Cpath%20d%3D%22M55.1342%2019.555C55.0146%2019.5562%2054.896%2019.5331%2054.7855%2019.487C54.675%2019.4409%2054.5749%2019.3729%2054.4912%2019.2869C54.4075%2019.201%2054.3419%2019.0989%2054.2984%2018.9868C54.2549%2018.8747%2054.2343%2018.7549%2054.2379%2018.6347C54.2379%2018.3981%2054.3313%2018.1712%2054.4975%2018.0039C54.6637%2017.8367%2054.8892%2017.7427%2055.1243%2017.7427C55.3594%2017.7427%2055.5848%2017.8367%2055.7511%2018.0039C55.9173%2018.1712%2056.0107%2018.3981%2056.0107%2018.6347C56.0156%2018.8736%2055.926%2019.1048%2055.7617%2019.2773C55.5973%2019.4499%2055.3716%2019.5498%2055.1342%2019.555ZM55.1142%2013.4827C51.5297%2013.4827%2049.0254%2015.5741%2049.0254%2018.6157C49.0254%2021.6572%2051.4279%2023.8062%2055.0945%2023.8062C58.7612%2023.8062%2061.2048%2021.7147%2061.2048%2018.6157C61.2048%2015.5166%2058.7408%2013.4827%2055.1161%2013.4827H55.1142Z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3Cpath%20d%3D%22M76.2737%2013.4827C75.0947%2013.4827%2073.8172%2013.7839%2073.1167%2014.9297C72.5428%2013.9826%2071.5784%2013.4827%2070.3886%2013.4827C68.9506%2013.4827%2067.8395%2013.9469%2067.1098%2015.0819V13.8118H62.0594V23.4972H67.1915V18.1515C67.2031%2017.9883%2067.2756%2017.8356%2067.3946%2017.7241C67.5136%2017.6126%2067.6701%2017.5506%2067.8326%2017.5506C67.9952%2017.5506%2068.1518%2017.6126%2068.2707%2017.7241C68.3897%2017.8356%2068.4622%2017.9883%2068.4738%2018.1515V23.4972H73.5657V18.1515C73.5773%2017.9883%2073.6498%2017.8356%2073.7688%2017.7241C73.8878%2017.6126%2074.0443%2017.5506%2074.2069%2017.5506C74.3694%2017.5506%2074.526%2017.6126%2074.6449%2017.7241C74.7639%2017.8356%2074.8364%2017.9883%2074.848%2018.1515V23.4972H80.0001V17.0863C80.0001%2014.9359%2078.4926%2013.4842%2076.2737%2013.4842V13.4827Z%22%20fill%3D%22%23FFFFFF%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cdefs%3E%3CclipPath%20id%3D%22a%22%3E%3Crect%20width%3D%2280%22%20height%3D%2214%22%20fill%3D%22white%22%20transform%3D%22translate%280%2010.5%29%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22b%22%3E%3Crect%20width%3D%2280.164%22%20height%3D%2213.3078%22%20fill%3D%22white%22%20transform%3D%22translate%28-0.164062%2010.5%29%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%3C%2Fsvg%3E" alt="Kustom" height="32">
+  <div>
+    <div class="cover-eyebrow">Integration guide · WooCommerce</div>
+    <div class="cover-title">Recurring checkout for FixMyPhone — quote now, charge later</div>
+  </div>
+  <div class="cover-meta">
+    April 2026 <span>·</span> Kustom Checkout v3 <span>·</span> Customer Token API
+  </div>
+</div>
+
+<!-- Page body -->
+<div class="page-body">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <div class="sidebar-label">On this page</div>
+      <a href="#overview">Overview</a>
+      <a href="#prerequisites">Prerequisites</a>
+      <a href="#step1">1. Create the booking order</a>
+      <a href="#step2">2. Read the recurring token</a>
+      <a href="#step3">3. Create order after approval</a>
+      <a href="#woocommerce">WooCommerce implementation</a>
+      <a href="#errors">Error handling</a>
+      <a href="#reference">API reference</a>
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- Overview -->
+    <section class="section" id="overview">
+      <h1>Overview</h1>
+      <p>FixMyPhone accepts devices for repair without knowing the final cost upfront. The customer drops off their device, a technician assesses it, and the customer is charged only after approving the quoted price. This guide explains how to implement that flow using Kustom's recurring checkout feature on WooCommerce.</p>
+      <p>The flow has three stages: save the customer's payment method via a 0-amount checkout, assess and quote the repair, then charge the saved method once the customer confirms.</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Customer books a repair</div>
+            <div class="flow-desc">A 0-amount Kustom Checkout order is created with <code>recurring: true</code>. The customer enters their payment details and completes checkout — no charge is made.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Read token via Checkout API, assess device</div>
+            <div class="flow-desc">When the push fires, read the completed order via the Checkout API to retrieve the <code>recurring_token</code>. Store it against the repair job. A technician inspects the device and generates a quote.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Customer approves — create a new order with the token</div>
+            <div class="flow-desc">The customer approves the quote. FixMyPhone calls the Customer Token API with the stored <code>recurring_token</code> to create a new order. Capture is then handled via the Order Management API.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Order completed</div>
+            <div class="flow-desc">The Customer Token API returns an order that can be acknowledged and managed via the Order Management API as normal.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Prerequisites -->
+    <section class="section" id="prerequisites">
+      <h1>Prerequisites</h1>
+
+      <div class="callout warning">
+        <div class="callout-label">Required before starting</div>
+        Recurring payments must be enabled on the FixMyPhone merchant account. Contact your Kustom integration manager to activate the feature flag.
+      </div>
+
+      <p>Before implementing this flow, make sure the following are in place.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Requirement</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Recurring feature enabled</td>
+            <td>Must be activated by Kustom on the merchant account. The <code>recurring</code> flag in checkout requests is silently ignored if not enabled.</td>
+          </tr>
+          <tr>
+            <td>WooCommerce + KCO plugin</td>
+            <td>Kustom Checkout for WooCommerce by Krokedil. Version 3.x or later recommended.</td>
+          </tr>
+          <tr>
+            <td>Server-side token storage</td>
+            <td>A secure way to store the <code>recurring_token</code> per repair job — for example as a custom WooCommerce order meta field.</td>
+          </tr>
+          <tr>
+            <td>API credentials</td>
+            <td>Kustom API username and password (used as HTTP Basic Auth) for the Customer Token API calls in step 3.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Step 1 -->
+    <section class="section" id="step1">
+      <div class="step-header">
+        <div class="step-badge">1</div>
+        <h1>Create the booking order (0-amount, recurring)</h1>
+      </div>
+
+      <p>When a customer books a repair, create a Kustom Checkout order with <code>"order_amount": 0</code> and <code>"recurring": true</code>. The customer sees the checkout iframe, enters their payment details, and completes a zero-charge transaction. Kustom tokenises their payment method and returns a <code>recurring_token</code> on completion.</p>
+
+      <h3>Checkout API request</h3>
+      <p>Send a <code>POST</code> to <code>https://api.kustom.co/checkout/v3/orders</code> with Basic Auth. For a WooCommerce repair booking product, the payload looks like this:</p>
+
+      <pre><code>{
+  "purchase_country":  "SE",
+  "purchase_currency": "SEK",
+  "locale":            "sv-SE",
+  "order_amount":      0,
+  "order_tax_amount":  0,
+  "order_lines": [
+    {
+      "type":             "physical",
+      "reference":        "repair-booking",
+      "name":             "Repair booking — payment authorisation",
+      "quantity":         1,
+      "unit_price":       0,
+      "tax_rate":         0,
+      "total_amount":     0,
+      "total_tax_amount": 0
+    }
+  ],
+  "recurring": true,
+  "merchant_urls": {
+    "terms":        "https://fixmyphone.se/terms",
+    "checkout":     "https://fixmyphone.se/checkout",
+    "confirmation": "https://fixmyphone.se/confirmation?order_id={checkout.order.id}",
+    "push":         "https://fixmyphone.se/kustom/push?order_id={checkout.order.id}"
+  }
+}</code></pre>
+
+      <div class="callout">
+        <div class="callout-label">Note</div>
+        Even with <code>order_amount: 0</code>, the customer must complete the checkout flow. Their payment method is validated and tokenised at this point, but no charge is made.
+      </div>
+
+      <p>The API returns an <code>order_id</code> and an <code>html_snippet</code> containing the checkout iframe. Render the snippet on the booking confirmation page. See <a href="https://docs.kustom.co/contents/checkout/use-cases/recurring" target="_blank">Recurring payments overview</a> for the full field reference.</p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Step 2 -->
+    <section class="section" id="step2">
+      <div class="step-header">
+        <div class="step-badge">2</div>
+        <h1>Read the recurring token via Checkout API</h1>
+      </div>
+
+      <p>After the customer completes the 0-amount checkout, Kustom sends a push notification to the <code>merchant_urls.push</code> endpoint. At this point the order status transitions to <code>checkout_complete</code>. Read the order via the <strong>Checkout API</strong> to retrieve the <code>recurring_token</code>.</p>
+
+      <h3>Read the completed order — Checkout API</h3>
+      <pre><code>GET https://api.kustom.co/checkout/v3/orders/{order_id}
+Authorization: Basic {base64(username:password)}</code></pre>
+
+      <p>The response includes a <code>recurring_token</code> field at the top level:</p>
+
+      <pre><code>{
+  "order_id":        "ABC123",
+  "status":          "checkout_complete",
+  "recurring_token": "rct_XXXXXXXXXXXXXXXX",
+  ...
+}</code></pre>
+
+      <div class="callout warning">
+        <div class="callout-label">Important</div>
+        Store the <code>recurring_token</code> securely against the specific repair job — not just the customer. A customer may have multiple open repairs, each needing its own token.
+      </div>
+
+      <h3>Acknowledge the order — Order Management API</h3>
+      <p>Once you've read and stored the token, acknowledge the 0-amount order via the Order Management API so Kustom knows it has been processed on your end.</p>
+
+      <pre><code>POST https://api.kustom.co/ordermanagement/v1/orders/{order_id}/acknowledge
+Authorization: Basic {base64(username:password)}</code></pre>
+
+      <p>A successful acknowledgement returns HTTP <code>204 No Content</code>. See <a href="https://docs.kustom.co/contents/api/order-management" target="_blank">Order Management API</a> for full details.</p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Step 3 -->
+    <section class="section" id="step3">
+      <div class="step-header">
+        <div class="step-badge">3</div>
+        <h1>Create a new order with the token after quote approval</h1>
+      </div>
+
+      <p>Once the repair is assessed, communicate the price to the customer (email, SMS, or via the FixMyPhone portal). When they confirm, use the stored <code>recurring_token</code> to create a new order via the Customer Token API — no new checkout session is needed. The resulting order is then captured via the Order Management API.</p>
+
+      <h3>Customer Token API request</h3>
+      <pre><code>POST https://api.kustom.co/customer-token/v1/tokens/{recurring_token}/order
+Authorization: Basic {base64(username:password)}
+Content-Type:  application/json
+
+{
+  "purchase_country":  "SE",
+  "purchase_currency": "SEK",
+  "locale":            "sv-SE",
+  "billing_address": {
+    "given_name":   "Anna",
+    "family_name":  "Lindqvist",
+    "email":        "anna@example.com",
+    "phone":        "+46701234567",
+    "street_address": "Storgatan 1",
+    "postal_code":  "111 22",
+    "city":         "Stockholm",
+    "country":      "SE"
+  },
+  "order_amount":     149900,
+  "order_tax_amount":  29980,
+  "order_lines": [
+    {
+      "type":             "physical",
+      "reference":        "screen-replacement-iphone15",
+      "name":             "iPhone 15 screen replacement",
+      "quantity":         1,
+      "unit_price":       149900,
+      "tax_rate":         2500,
+      "total_amount":     149900,
+      "total_tax_amount":  29980
+    }
+  ],
+  "auto_capture": true
+}</code></pre>
+
+      <div class="callout">
+        <div class="callout-label">Amounts are in minor units</div>
+        All amounts are in the lowest currency denomination. 149900 = 1 499,00 SEK. The <code>tax_rate</code> is expressed in hundredths of a percent — 2500 = 25%.
+      </div>
+
+      <p>Setting <code>"auto_capture": true</code> captures the payment immediately. For a repair shop, it often makes more sense to omit this flag and capture manually via the Order Management API once the device is ready for collection. See <a href="https://docs.kustom.co/contents/api/customer-token" target="_blank">Customer Token API reference</a>.</p>
+
+      <h3>Response</h3>
+      <p>A successful response returns HTTP <code>200</code> with the new order object, including an <code>order_id</code>. Use this <code>order_id</code> with the Order Management API to capture, refund, or handle customer service on the order.</p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- WooCommerce -->
+    <section class="section" id="woocommerce">
+      <h1>WooCommerce implementation</h1>
+
+      <p>The KCO plugin handles the checkout iframe and push endpoint natively. You'll need custom code to set <code>recurring: true</code>, handle the 0-amount cart, and store the token. The recommended approach is a small custom plugin or a code snippet in <code>functions.php</code>.</p>
+
+      <h3>Force 0-amount and recurring on the booking product</h3>
+      <p>Use the <code>kco_wc_api_request_args</code> filter to modify the checkout request before it's sent to Kustom. Scope this to your repair booking product category so it doesn't affect other checkout flows.</p>
+
+      <pre><code>/**
+ * Set recurring: true and 0-amount for repair booking checkouts.
+ * Runs only when the cart contains a product in the 'repair-booking' category.
+ */
+add_filter( 'kco_wc_api_request_args', function( $args ) {
+    if ( ! fixmyphone_is_repair_booking_cart() ) {
+        return $args;
+    }
+
+    $args['recurring']        = true;
+    $args['order_amount']     = 0;
+    $args['order_tax_amount'] = 0;
+
+    // Replace order lines with a single 0-amount booking line
+    $args['order_lines'] = [
+        [
+            'type'             => 'physical',
+            'reference'        => 'repair-booking',
+            'name'             => 'Repair booking — payment authorisation',
+            'quantity'         => 1,
+            'unit_price'       => 0,
+            'tax_rate'         => 0,
+            'total_amount'     => 0,
+            'total_tax_amount' => 0,
+        ],
+    ];
+
+    return $args;
+} );
+
+function fixmyphone_is_repair_booking_cart() {
+    foreach ( WC()->cart->get_cart() as $item ) {
+        if ( has_term( 'repair-booking', 'product_cat', $item['product_id'] ) ) {
+            return true;
+        }
+    }
+    return false;
+}</code></pre>
+
+      <h3>Capture the recurring token on push</h3>
+      <p>The KCO plugin processes the Kustom push and calls the <code>woocommerce_checkout_order_created</code> action. Hook into it to fetch the completed Kustom order and save the <code>recurring_token</code> as order meta.</p>
+
+      <pre><code>/**
+ * After KCO processes the push, fetch the Kustom order and save the
+ * recurring_token to WooCommerce order meta.
+ */
+add_action( 'kco_wc_order_complete', function( $order_id, $kustom_order ) {
+    $recurring_token = $kustom_order['recurring_token'] ?? null;
+
+    if ( $recurring_token ) {
+        update_post_meta( $order_id, '_kustom_recurring_token', $recurring_token );
+    }
+}, 10, 2 );</code></pre>
+
+      <div class="callout">
+        <div class="callout-label">Hook availability</div>
+        Check the exact hook name against your installed KCO plugin version. Older versions may use <code>kco_wc_order_completed</code> or expose the Kustom order data differently. The key is to capture the <code>recurring_token</code> from the Kustom order object at the time of push processing.
+      </div>
+
+      <h3>Charge via Customer Token API (backend)</h3>
+      <p>When the customer approves the quote, trigger a server-side call to the Customer Token API. This is typically called from a custom WooCommerce admin action, a REST endpoint, or a webhook from your quoting system. Retrieve the token from order meta and send the request as shown in step 3.</p>
+
+      <pre><code>/**
+ * Example: Charge a repair order after customer approval.
+ * Call this from your quote approval flow, passing the WooCommerce order ID
+ * and the approved repair amount in øre/öre (minor units).
+ */
+function fixmyphone_charge_repair( int $wc_order_id, int $amount_minor, string $repair_description ) {
+    $token = get_post_meta( $wc_order_id, '_kustom_recurring_token', true );
+
+    if ( ! $token ) {
+        throw new Exception( 'No recurring token found for order ' . $wc_order_id );
+    }
+
+    $credentials = base64_encode( KUSTOM_API_USER . ':' . KUSTOM_API_PASSWORD );
+    $tax_amount  = (int) round( $amount_minor * 0.2 ); // 20% VAT example
+
+    $response = wp_remote_post(
+        'https://api.kustom.co/customer-token/v1/tokens/' . $token . '/order',
+        [
+            'headers' => [
+                'Authorization' => 'Basic ' . $credentials,
+                'Content-Type'  => 'application/json',
+            ],
+            'body' => wp_json_encode( [
+                'purchase_country'  => 'SE',
+                'purchase_currency' => 'SEK',
+                'locale'            => 'sv-SE',
+                'billing_address'   => fixmyphone_get_billing_address( $wc_order_id ),
+                'order_amount'      => $amount_minor,
+                'order_tax_amount'  => $tax_amount,
+                'order_lines'       => [
+                    [
+                        'type'             => 'physical',
+                        'reference'        => 'repair-' . $wc_order_id,
+                        'name'             => $repair_description,
+                        'quantity'         => 1,
+                        'unit_price'       => $amount_minor,
+                        'tax_rate'         => 2000, // 20% = 2000
+                        'total_amount'     => $amount_minor,
+                        'total_tax_amount' => $tax_amount,
+                    ],
+                ],
+                'auto_capture' => true,
+            ] ),
+        ]
+    );
+
+    return json_decode( wp_remote_retrieve_body( $response ), true );
+}</code></pre>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Error handling -->
+    <section class="section" id="errors">
+      <h1>Error handling</h1>
+
+      <p>The Customer Token API returns structured error objects when a charge fails. The two most common cases to handle are a declined or expired payment method and an invalid token.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Error code</th>
+            <th>Meaning</th>
+            <th>Recommended action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>PAYMENT_METHOD_FAILED</code></td>
+            <td>The saved payment method was declined, expired, or had insufficient funds.</td>
+            <td>Notify the customer and ask them to update their payment method. The simplest approach is to create a new 0-amount recurring checkout (step 1) and replace the stored token.</td>
+          </tr>
+          <tr>
+            <td><code>TOKEN_EXPIRED</code></td>
+            <td>The <code>recurring_token</code> has expired. Tokens are valid for 12 months from creation.</td>
+            <td>Same as above — initiate a new booking checkout to capture a fresh token.</td>
+          </tr>
+          <tr>
+            <td><code>BAD_REQUEST</code></td>
+            <td>Invalid or missing fields in the request body.</td>
+            <td>Check that <code>order_amount</code>, <code>order_lines</code>, and <code>billing_address</code> are all present and correctly formatted. Amounts must be integers in minor units.</td>
+          </tr>
+          <tr>
+            <td>HTTP <code>401</code></td>
+            <td>Authentication failure.</td>
+            <td>Verify that the API credentials are correct and that the Basic Auth header is properly base64-encoded as <code>username:password</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <div class="callout-label">Customer notification on payment failure</div>
+        When <code>PAYMENT_METHOD_FAILED</code> occurs, send the customer a link back to a new repair booking checkout so they can enter updated payment details. Do not retry the charge on the same token — it will fail again.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Reference -->
+    <section class="section" id="reference">
+      <h1>API reference</h1>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Resource</th>
+            <th>URL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Recurring payments overview</td>
+            <td><a href="https://docs.kustom.co/contents/checkout/use-cases/recurring" target="_blank">docs.kustom.co/contents/checkout/use-cases/recurring</a></td>
+          </tr>
+          <tr>
+            <td>Checkout API</td>
+            <td><a href="https://docs.kustom.co/contents/api/checkout" target="_blank">docs.kustom.co/contents/api/checkout</a></td>
+          </tr>
+          <tr>
+            <td>Order Management API</td>
+            <td><a href="https://docs.kustom.co/contents/api/order-management" target="_blank">docs.kustom.co/contents/api/order-management</a></td>
+          </tr>
+          <tr>
+            <td>Customer Token API</td>
+            <td><a href="https://docs.kustom.co/contents/api/customer-token" target="_blank">docs.kustom.co/contents/api/customer-token</a></td>
+          </tr>
+          <tr>
+            <td>WooCommerce integration guide</td>
+            <td><a href="https://docs.kustom.co/contents/partners/e-commerce-platforms/woocommerce" target="_blank">docs.kustom.co/contents/partners/e-commerce-platforms/woocommerce</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <img src="data:image/svg+xml,%3Csvg%20width%3D%2280%22%20height%3D%2235%22%20viewBox%3D%220%200%2080%2035%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20clip-path%3D%22url%28%23a%29%22%3E%3Cg%20clip-path%3D%22url%28%23b%29%22%3E%3Cmask%20id%3D%22c%22%20style%3D%22mask-type%3Aluminance%22%20maskUnits%3D%22userSpaceOnUse%22%20x%3D%22-1%22%20y%3D%2210%22%20width%3D%2281%22%20height%3D%2215%22%3E%3Cpath%20d%3D%22M79.9999%2010.5H-0.164062V24.5H79.9999V10.5Z%22%20fill%3D%22white%22%2F%3E%3C%2Fmask%3E%3Cg%20mask%3D%22url%28%23c%29%22%3E%3Cpath%20d%3D%22M22.8498%2019.468C22.8435%2019.6348%2022.7731%2019.7926%2022.6536%2019.9083C22.534%2020.0241%2022.3746%2020.0887%2022.2087%2020.0887C22.0428%2020.0887%2021.8834%2020.0241%2021.7639%2019.9083C21.6443%2019.7926%2021.574%2019.6348%2021.5676%2019.468V13.8115H16.3955V20.165C16.3955%2022.567%2017.6994%2023.8059%2019.858%2023.8059C21.313%2023.8059%2022.3962%2023.2936%2022.995%2022.5002V23.4954H28.0256V13.8117H22.853V19.4682L22.8498%2019.468Z%22%20fill%3D%22%23161616%22%2F%3E%3Cpath%20d%3D%22M33.5908%2016.7761C33.5908%2016.4655%2033.8099%2016.3304%2034.1864%2016.3304C34.5628%2016.3304%2034.8622%2016.5819%2034.8622%2017.0866H39.357C39.357%2015.6146%2038.4821%2013.4844%2033.972%2013.4844C30.7934%2013.4844%2028.7859%2014.7233%2028.7859%2016.6798C28.7859%2020.7478%2034.6322%2019.2169%2034.6322%2020.5147C34.6322%2020.805%2034.3932%2020.9603%2034.0167%2020.9603C33.58%2020.9603%2033.3007%2020.6498%2033.3007%2020.1856H28.6855C28.7458%2022.6264%2030.8721%2023.8078%2034.0506%2023.8078C36.8127%2023.8078%2039.6549%2023.1884%2039.6549%2020.4961C39.6549%2016.7387%2033.5893%2018.0755%2033.5893%2016.7774L33.5908%2016.7761Z%22%20fill%3D%22%23161616%22%2F%3E%3Cpath%20d%3D%22M12.4825%2017.3767L15.8231%2013.6377L11.6893%2010.5L8.06481%2014.8784V11.0233H2.76913V14.8006H-0.164062V19.4696H2.76913V23.4987H8.06481V19.6825C9.40888%2020.7678%2010.1618%2022.0269%2010.4472%2023.4988H16.2103C15.7625%2021.1358%2014.5409%2019.1019%2012.4839%2017.3784L12.4825%2017.3767Z%22%20fill%3D%22%23161616%22%2F%3E%3Cpath%20d%3D%22M46.3978%2011.469H41.2041V13.8134H39.7166V17.0864H41.2041V19.7012C41.2041%2022.2584%2042.6916%2023.4977%2045.7051%2023.4977H48.413V19.5849H46.9055C46.8384%2019.5886%2046.7714%2019.5782%2046.7085%2019.5544C46.6457%2019.5305%2046.5885%2019.4938%2046.5406%2019.4465C46.4927%2019.3991%2046.4551%2019.3423%2046.4303%2019.2795C46.4054%2019.2167%2046.3939%2019.1494%2046.3963%2019.0819V17.0865H48.4131V13.8134H46.3963V11.469H46.3978Z%22%20fill%3D%22%23161616%22%2F%3E%3Cpath%20d%3D%22M55.1342%2019.555C55.0146%2019.5562%2054.896%2019.5331%2054.7855%2019.487C54.675%2019.4409%2054.5749%2019.3729%2054.4912%2019.2869C54.4075%2019.201%2054.3419%2019.0989%2054.2984%2018.9868C54.2549%2018.8747%2054.2343%2018.7549%2054.2379%2018.6347C54.2379%2018.3981%2054.3313%2018.1712%2054.4975%2018.0039C54.6637%2017.8367%2054.8892%2017.7427%2055.1243%2017.7427C55.3594%2017.7427%2055.5848%2017.8367%2055.7511%2018.0039C55.9173%2018.1712%2056.0107%2018.3981%2056.0107%2018.6347C56.0156%2018.8736%2055.926%2019.1048%2055.7617%2019.2773C55.5973%2019.4499%2055.3716%2019.5498%2055.1342%2019.555ZM55.1142%2013.4827C51.5297%2013.4827%2049.0254%2015.5741%2049.0254%2018.6157C49.0254%2021.6572%2051.4279%2023.8062%2055.0945%2023.8062C58.7612%2023.8062%2061.2048%2021.7147%2061.2048%2018.6157C61.2048%2015.5166%2058.7408%2013.4827%2055.1161%2013.4827H55.1142Z%22%20fill%3D%22%23161616%22%2F%3E%3Cpath%20d%3D%22M76.2737%2013.4827C75.0947%2013.4827%2073.8172%2013.7839%2073.1167%2014.9297C72.5428%2013.9826%2071.5784%2013.4827%2070.3886%2013.4827C68.9506%2013.4827%2067.8395%2013.9469%2067.1098%2015.0819V13.8118H62.0594V23.4972H67.1915V18.1515C67.2031%2017.9883%2067.2756%2017.8356%2067.3946%2017.7241C67.5136%2017.6126%2067.6701%2017.5506%2067.8326%2017.5506C67.9952%2017.5506%2068.1518%2017.6126%2068.2707%2017.7241C68.3897%2017.8356%2068.4622%2017.9883%2068.4738%2018.1515V23.4972H73.5657V18.1515C73.5773%2017.9883%2073.6498%2017.8356%2073.7688%2017.7241C73.8878%2017.6126%2074.0443%2017.5506%2074.2069%2017.5506C74.3694%2017.5506%2074.526%2017.6126%2074.6449%2017.7241C74.7639%2017.8356%2074.8364%2017.9883%2074.848%2018.1515V23.4972H80.0001V17.0863C80.0001%2014.9359%2078.4926%2013.4842%2076.2737%2013.4842V13.4827Z%22%20fill%3D%22%23161616%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cdefs%3E%3CclipPath%20id%3D%22a%22%3E%3Crect%20width%3D%2280%22%20height%3D%2214%22%20fill%3D%22white%22%20transform%3D%22translate%280%2010.5%29%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22b%22%3E%3Crect%20width%3D%2280.164%22%20height%3D%2213.3078%22%20fill%3D%22white%22%20transform%3D%22translate%28-0.164062%2010.5%29%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%3C%2Fsvg%3E" alt="Kustom" height="22">
+  <div class="footer-links">
+    <a href="https://docs.kustom.co" target="_blank">docs.kustom.co</a>
+    <a href="https://docs.kustom.co/contents/api/customer-token" target="_blank">Customer Token API</a>
+  </div>
+  <div class="footer-version">April 2026</div>
+</div>
+
+</body>
+</html>
