@@ -71,28 +71,28 @@
 <body>
 
   <h1>Global vs Local Checkout — Firstcamp (K512282)</h1>
-  <p class="subtitle">22 mar – 19 apr 2026 &nbsp;·&nbsp; Senaste 29 hela dagar</p>
+  <p class="subtitle">29 mar – 27 apr 2026 &nbsp;·&nbsp; Senaste 30 hela dagar</p>
 
   <div class="kpi-row">
     <div class="kpi">
       <div class="kpi-label">Totalt antal orders</div>
-      <div class="kpi-value">428 791</div>
-      <div class="kpi-sub">29 dagar</div>
+      <div class="kpi-value">22 258</div>
+      <div class="kpi-sub">30 dagar</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Snitt global checkout</div>
-      <div class="kpi-value accent">10.7%</div>
+      <div class="kpi-value accent">8.6%</div>
       <div class="kpi-sub">per dag</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Totalt global checkout</div>
-      <div class="kpi-value">46 111</div>
+      <div class="kpi-value">1 858</div>
       <div class="kpi-sub">orders via global</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Max global checkout</div>
-      <div class="kpi-value">15.2%</div>
-      <div class="kpi-sub">19 apr 2026</div>
+      <div class="kpi-value">11.3%</div>
+      <div class="kpi-sub">20 apr 2026</div>
     </div>
   </div>
 
@@ -101,7 +101,7 @@
     <div class="chart-wrap">
       <canvas id="lineChart"></canvas>
     </div>
-    <p class="note">* 20 apr ej inkluderat (pågående dag)</p>
+    <p class="note">* 28 apr ej inkluderat (pågående dag)</p>
   </div>
 
   <div class="chart-card">
@@ -113,16 +113,16 @@
 
   <script>
     const labels = [
-      '22 mar','23 mar','24 mar','25 mar','26 mar','27 mar','28 mar',
       '29 mar','30 mar','31 mar',
       '1 apr','2 apr','3 apr','4 apr','5 apr','6 apr','7 apr','8 apr','9 apr','10 apr',
-      '11 apr','12 apr','13 apr','14 apr','15 apr','16 apr','17 apr','18 apr','19 apr'
+      '11 apr','12 apr','13 apr','14 apr','15 apr','16 apr','17 apr','18 apr','19 apr','20 apr',
+      '21 apr','22 apr','23 apr','24 apr','25 apr','26 apr','27 apr'
     ];
 
-    const totalOrders  = [16253,10647,10691,14951,10006,12616,16192,20420,14737,14712,12508,12705,15135,12969,15831,18879,14912,15527,16127,14990,15615,32507,14032,12681,13970,13111,14081,13405,21820];
-    const globalOrders = [1630,1234,1205,1322,1170,1766,1643,2542,1561,1605,1317,1287,1892,1253,1664,2314,1838,1437,1253,1294,1428,3234,1829,1385,1349,1205,1426,1486,3327];
-    const localOrders  = [14623,9413,9486,13629,8836,10850,14549,17878,13176,13107,11191,11418,13243,11716,14167,16565,13074,14090,14874,13696,14187,29273,12203,11296,12621,11906,12655,11919,18493];
-    const globalPct    = [10.0,11.6,11.3,8.8,11.7,14.0,10.1,12.4,10.6,10.9,10.5,10.1,12.5,9.7,10.5,12.3,12.3,9.3,7.8,8.6,9.1,9.9,13.0,10.9,9.7,9.2,10.1,11.1,15.2];
+    const totalOrders  = [920,649,626,547,569,659,553,683,801,633,743,728,668,677,1426,601,556,608,572,624,587,899,800,672,715,692,856,862,1213,1119];
+    const globalOrders = [79,60,50,57,53,63,40,51,73,67,62,50,44,42,81,58,49,66,55,57,58,91,90,67,65,54,57,62,81,76];
+    const localOrders  = [841,589,576,490,516,596,513,632,728,566,681,678,624,635,1345,543,507,542,517,567,529,808,710,605,650,638,799,800,1132,1043];
+    const globalPct    = [8.6,9.2,8.0,10.4,9.3,9.6,7.2,7.5,9.1,10.6,8.3,6.9,6.6,6.2,5.7,9.7,8.8,10.9,9.6,9.1,9.9,10.1,11.3,10.0,9.1,7.8,6.7,7.2,6.7,6.8];
 
     const avgPct = (globalPct.reduce((a,b)=>a+b,0)/globalPct.length).toFixed(1);
 
@@ -168,7 +168,7 @@
         scales: {
           y: {
             min: 0,
-            max: 20,
+            max: 15,
             ticks: {
               callback: v => v + '%',
               font: { size: 11 }
